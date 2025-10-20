@@ -1,0 +1,64 @@
+version: '3.8'
+
+services:
+  # MongoDB Database
+  mongodb:
+    image: mongo:7.0
+    container_name: gomeret_mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: admin
+      MONGO_INITDB_ROOT_PASSWORD: gomeret2026
+      MONGO_INITDB_DATABASE: gomeret_calendar
+    volumes:
+      - mongodb_data:/data/db
+    networks:
+      - gomeret_network
+
+  # Backend (FastAPI)
+  backend:
+    build: ./backend
+    container_name: gomeret_backend
+    restart: unless-stopped
+    ports:
+      - "8000:8000"
+    environment:
+      - MONGODB_URL=mongodb://admin:gomeret2026@mongodb:27017/gomeret_calendar?authSource=admin
+      - SECRET_KEY=your-secret-key-change-in-production
+      - GOOGLE_CHAT_WEBHOOK_URL=${GOOGLE_CHAT_WEBHOOK_URL}
+      - TZ=Asia/Jerusalem
+    depends_on:
+      - mongodb
+    volumes:
+      - ./backend:/app
+    networks:
+      - gomeret_network
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+
+  # Frontend (React + Vite)
+  frontend:
+    build: ./frontend
+    container_name: gomeret_frontend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - VITE_API_URL=http://localhost:8000
+    depends_on:
+      - backend
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    networks:
+      - gomeret_network
+    command: npm run dev -- --host 0.0.0.0 --port 3000
+
+volumes:
+  mongodb_data:
+    driver: local
+
+networks:
+  gomeret_network:
+    driver: bridge
