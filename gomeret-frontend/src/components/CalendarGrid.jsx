@@ -210,7 +210,7 @@ const CalendarGrid = () => {
 
         setDraggingEvent(null);
     };
-    
+
     const monthEvents = Object.entries(events)
         .filter(([dateKey]) => {
             const [y, m] = dateKey.split("-").map(Number);
@@ -267,6 +267,19 @@ const CalendarGrid = () => {
                 }}
             >
                 <button
+                    onClick={() => setYear(prev => prev - 1)}
+                    style={{
+                        background: "none",
+                        border: "1px solid #D4AF37",
+                        color: "#D4AF37",
+                        padding: "5px 10px",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                    }}
+                >
+                    ⏩
+                </button>
+                <button
                     onClick={prevMonth}
                     style={{
                         background: "none",
@@ -296,6 +309,20 @@ const CalendarGrid = () => {
                     }}
                 >
                     ⬅️
+                </button>
+
+                <button
+                    onClick={() => setYear(prev => prev + 1)}
+                    style={{
+                        background: "none",
+                        border: "1px solid #D4AF37",
+                        color: "#D4AF37",
+                        padding: "5px 10px",
+                        borderRadius: "5px",
+                        cursor: "pointer",
+                    }}
+                >
+                    ⏪
                 </button>
 
                 <button
@@ -544,8 +571,8 @@ const CalendarGrid = () => {
                             overflowY: "auto",
                             textAlign: "right",
                             direction: "rtl",
-                            ...modalAnimationStyle, 
-                        }}                        
+                            ...modalAnimationStyle,
+                        }}
                     >
                         <h3 style={{ color: "#D4AF37", marginTop: 0 }}>
                             אירועים עבור {selectedDateLabel}
