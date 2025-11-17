@@ -1,10 +1,25 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 
 const CalendarGrid = () => {
     const realToday = new Date();
 
     const [year, setYear] = useState(realToday.getFullYear());
     const [month, setMonth] = useState(realToday.getMonth());
+
+    const [events, setEvents] = useState({});
+
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedDate, setSelectedDate] = useState("");
+    const [eventText, setEventText] = useState("");
+
+    useEffect(() => {
+        const saved = localStorage.getItem("calendarEvents");
+        if (saved) setEvents(JSON.parse(saved));
+    }, []);
+
+    useEffect(() => {
+        localStorage.setItem("calendarEvents", JSON.stringify(events));
+    }, [events]);
 
     const monthsNames = [
         "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
@@ -41,6 +56,29 @@ const CalendarGrid = () => {
     const goToToday = () => {
         setYear(realToday.getFullYear());
         setMonth(realToday.getMonth());
+    };
+
+    const openModal = (day) => {
+        if (!day) return;
+        const dateStr = `${year}-${month + 1}-${day}`;
+        setSelectedDate(dateStr);
+        setEventText("");
+        setIsModalOpen(true);
+    };
+
+    const saveEvent = () => {
+        if (eventText.trim() === "") return;
+
+        setEvents((prev) => {
+            const old = prev[selectedDate] || [];
+            return {
+                ...prev,
+                [selectedDate]: [...old, { text: eventText, id: Date.now() }],
+            };
+        });
+
+        setEventText("");
+        setIsModalOpen(false);
     };
 
     return (
@@ -137,15 +175,20 @@ const CalendarGrid = () => {
                 }}
             >
                 {daysArray.map((day, i) => {
+                    const dateStr = day ? `${year}-${month + 1}-${day}` : null;
+
                     const isToday =
                         day &&
                         year === realToday.getFullYear() &&
                         month === realToday.getMonth() &&
                         day === realToday.getDate();
 
+                    const hasEvents = dateStr && events[dateStr];
+
                     return (
                         <div
                             key={i}
+                            onClick={() => openModal(day)}
                             style={{
                                 padding: "10px 0",
                                 borderRadius: "5px",
@@ -157,13 +200,108 @@ const CalendarGrid = () => {
                                 border: day ? "1px solid #D4AF37" : "none",
                                 color: isToday ? "#000" : "#fff",
                                 fontWeight: isToday ? "bold" : "normal",
+                                cursor: day ? "pointer" : "default",
+                                position: "relative",
                             }}
                         >
                             {day}
+
+                            {hasEvents && (
+                                <div
+                                    style={{
+                                        width: "6px",
+                                        height: "6px",
+                                        backgroundColor: "#D4AF37",
+                                        borderRadius: "50%",
+                                        position: "absolute",
+                                        bottom: "4px",
+                                        left: "50%",
+                                        transform: "translateX(-50%)",
+                                    }}
+                                ></div>
+                            )}
                         </div>
                     );
                 })}
             </div>
+
+            {isModalOpen && (
+                <div
+                    style={{
+                        position: "fixed",
+                        top: 0,
+                        right: 0,
+                        bottom: 0,
+                        left: 0,
+                        backgroundColor: "rgba(0,0,0,0.6)",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                        zIndex: 999,
+                    }}
+                >
+                    <div
+                        style={{
+                            background: "#222",
+                            padding: "20px",
+                            borderRadius: "10px",
+                            border: "1px solid #D4AF37",
+                            width: "300px",
+                            textAlign: "center",
+                        }}
+                    >
+                        <h3 style={{ color: "#D4AF37" }}>הוסף אירוע</h3>
+                        <p style={{ color: "#fff" }}>{selectedDate}</p>
+
+                        <input
+                            type="text"
+                            value={eventText}
+                            onChange={(e) => setEventText(e.target.value)}
+                            placeholder="תיאור האירוע..."
+                            style={{
+                                width: "90%",
+                                padding: "8px",
+                                marginBottom: "10px",
+                                borderRadius: "5px",
+                                border: "1px solid #D4AF37",
+                                background: "#000",
+                                color: "#fff",
+                            }}
+                        />
+
+                        <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
+                            <button
+                                onClick={saveEvent}
+                                style={{
+                                    backgroundColor: "#D4AF37",
+                                    color: "#000",
+                                    padding: "8px 12px",
+                                    borderRadius: "5px",
+                                    border: "none",
+                                    cursor: "pointer",
+                                    fontWeight: "bold",
+                                }}
+                            >
+                                שמירה
+                            </button>
+
+                            <button
+                                onClick={() => setIsModalOpen(false)}
+                                style={{
+                                    backgroundColor: "#555",
+                                    color: "#fff",
+                                    padding: "8px 12px",
+                                    borderRadius: "5px",
+                                    border: "none",
+                                    cursor: "pointer",
+                                }}
+                            >
+                                ביטול
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };
