@@ -2,6 +2,7 @@ import React from "react";
 import Countdown from "../components/Countdown";
 import JokesBox from "../components/JokesBox";
 import NotesBox from "../components/NotesBox";
+import CalendarGrid from "../components/CalendarGrid";
 
 const Home = () => {
     return (
@@ -14,8 +15,9 @@ const Home = () => {
             direction: "rtl",
             flexWrap: "wrap",
         }}>
-            <div style={{ flex: "1", minWidth: "300px" }}>
-                <Countdown />
+            <Countdown />
+            <div style={{ flex: "3", minWidth: "300px" }}>
+                <CalendarGrid />
             </div>
 
             <div style={{ flex: "1", minWidth: "300px" }}>
