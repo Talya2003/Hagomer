@@ -1,309 +1,609 @@
 import React, { useState, useEffect } from "react";
 
 const CalendarGrid = () => {
-    const realToday = new Date();
+  const realToday = new Date();
 
-    const [year, setYear] = useState(realToday.getFullYear());
-    const [month, setMonth] = useState(realToday.getMonth());
+  const [year, setYear] = useState(realToday.getFullYear());
+  const [month, setMonth] = useState(realToday.getMonth());
 
-    const [events, setEvents] = useState({});
+  const [events, setEvents] = useState({});
 
-    const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedDate, setSelectedDate] = useState("");
-    const [eventText, setEventText] = useState("");
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [selectedDateKey, setSelectedDateKey] = useState(null);
+  const [selectedDateLabel, setSelectedDateLabel] = useState("");
 
-    useEffect(() => {
-        const saved = localStorage.getItem("calendarEvents");
-        if (saved) setEvents(JSON.parse(saved));
-    }, []);
+  const [title, setTitle] = useState("");
+  const [startTime, setStartTime] = useState("");
+  const [endTime, setEndTime] = useState("");
+  const [notes, setNotes] = useState("");
+  const [attendees, setAttendees] = useState("");
 
-    useEffect(() => {
-        localStorage.setItem("calendarEvents", JSON.stringify(events));
-    }, [events]);
+  const monthsNames = [
+    "ינואר",
+    "פברואר",
+    "מרץ",
+    "אפריל",
+    "מאי",
+    "יוני",
+    "יולי",
+    "אוגוסט",
+    "ספטמבר",
+    "אוקטובר",
+    "נובמבר",
+    "דצמבר",
+  ];
 
-    const monthsNames = [
-        "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
-        "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר",
-    ];
+  const daysNames = ["א", "ב", "ג", "ד", "ה", "ו", "ש"];
 
-    const daysNames = ["א", "ב", "ג", "ד", "ה", "ו", "ש"];
+  const formatDateKey = (y, m, d) =>
+    `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
 
-    const daysInMonth = new Date(year, month + 1, 0).getDate();
-    const firstDay = new Date(year, month, 1).getDay();
+  useEffect(() => {
+    const saved = localStorage.getItem("calendarEvents");
+    if (saved) {
+      try {
+        setEvents(JSON.parse(saved));
+      } catch {
+        setEvents({});
+      }
+    }
+  }, []);
 
-    let daysArray = [];
-    for (let i = 0; i < firstDay; i++) daysArray.push(null);
-    for (let i = 1; i <= daysInMonth; i++) daysArray.push(i);
+  useEffect(() => {
+    localStorage.setItem("calendarEvents", JSON.stringify(events));
+  }, [events]);
 
-    const nextMonth = () => {
-        if (month === 11) {
-            setMonth(0);
-            setYear(year + 1);
-        } else {
-            setMonth(month + 1);
-        }
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
+
+  const daysArray = [];
+  for (let i = 0; i < firstDay; i++) daysArray.push(null);
+  for (let i = 1; i <= daysInMonth; i++) daysArray.push(i);
+
+  const nextMonth = () => {
+    if (month === 11) {
+      setMonth(0);
+      setYear((prev) => prev + 1);
+    } else {
+      setMonth((prev) => prev + 1);
+    }
+  };
+
+  const prevMonth = () => {
+    if (month === 0) {
+      setMonth(11);
+      setYear((prev) => prev - 1);
+    } else {
+      setMonth((prev) => prev - 1);
+    }
+  };
+
+  const goToToday = () => {
+    setYear(realToday.getFullYear());
+    setMonth(realToday.getMonth());
+  };
+
+  const openModal = (day) => {
+    if (!day) return;
+    const key = formatDateKey(year, month, day);
+    const label = `${day}.${month + 1}.${year}`;
+    setSelectedDateKey(key);
+    setSelectedDateLabel(label);
+    setTitle("");
+    setStartTime("");
+    setEndTime("");
+    setNotes("");
+    setAttendees("");
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const saveEvent = () => {
+    if (!selectedDateKey) return;
+    if (!title.trim() && !notes.trim()) return;
+
+    const newEvent = {
+      id: Date.now(),
+      title: title.trim() || "אירוע ללא שם",
+      startTime: startTime || "",
+      endTime: endTime || "",
+      notes: notes.trim() || "",
+      attendees: attendees.trim() || "",
     };
 
-    const prevMonth = () => {
-        if (month === 0) {
-            setMonth(11);
-            setYear(year - 1);
-        } else {
-            setMonth(month - 1);
-        }
-    };
+    setEvents((prev) => {
+      const old = prev[selectedDateKey] || [];
+      return {
+        ...prev,
+        [selectedDateKey]: [...old, newEvent],
+      };
+    });
 
-    const goToToday = () => {
-        setYear(realToday.getFullYear());
-        setMonth(realToday.getMonth());
-    };
+    setTitle("");
+    setStartTime("");
+    setEndTime("");
+    setNotes("");
+    setAttendees("");
+  };
 
-    const openModal = (day) => {
-        if (!day) return;
-        const dateStr = `${year}-${month + 1}-${day}`;
-        setSelectedDate(dateStr);
-        setEventText("");
-        setIsModalOpen(true);
-    };
+  const deleteEvent = (eventId) => {
+    if (!selectedDateKey) return;
+    setEvents((prev) => {
+      const old = prev[selectedDateKey] || [];
+      const filtered = old.filter((e) => e.id !== eventId);
+      const updated = { ...prev };
+      if (filtered.length === 0) {
+        delete updated[selectedDateKey];
+      } else {
+        updated[selectedDateKey] = filtered;
+      }
+      return updated;
+    });
+  };
 
-    const saveEvent = () => {
-        if (eventText.trim() === "") return;
-
-        setEvents((prev) => {
-            const old = prev[selectedDate] || [];
-            return {
-                ...prev,
-                [selectedDate]: [...old, { text: eventText, id: Date.now() }],
-            };
-        });
-
-        setEventText("");
-        setIsModalOpen(false);
-    };
-
-    return (
-        <div
-            style={{
-                backgroundColor: "#111",
-                borderRadius: "10px",
-                padding: "20px",
-                border: "1px solid #D4AF37",
-                color: "#fff",
-                direction: "rtl",
-                marginTop: "20px",
-            }}
+  return (
+    <div
+      style={{
+        backgroundColor: "#111",
+        borderRadius: "10px",
+        padding: "20px",
+        border: "1px solid #D4AF37",
+        color: "#fff",
+        direction: "rtl",
+        marginTop: "20px",
+      }}
+    >
+      {/* כותרת + חצים + היום */}
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "15px",
+          marginBottom: "15px",
+          flexWrap: "wrap",
+        }}
+      >
+        <button
+          onClick={prevMonth}
+          style={{
+            background: "none",
+            border: "1px solid #D4AF37",
+            color: "#D4AF37",
+            padding: "5px 10px",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
         >
+          ➡️
+        </button>
+
+        <h2 style={{ color: "#D4AF37", margin: 0 }}>
+          {monthsNames[month]} {year}
+        </h2>
+
+        <button
+          onClick={nextMonth}
+          style={{
+            background: "none",
+            border: "1px solid #D4AF37",
+            color: "#D4AF37",
+            padding: "5px 10px",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+        >
+          ⬅️
+        </button>
+
+        <button
+          onClick={goToToday}
+          style={{
+            backgroundColor: "#D4AF37",
+            color: "#000",
+            border: "none",
+            padding: "6px 12px",
+            borderRadius: "5px",
+            cursor: "pointer",
+            fontWeight: "bold",
+          }}
+        >
+          היום
+        </button>
+      </div>
+
+      {/* כותרת ימי השבוע */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(7, 1fr)",
+          textAlign: "center",
+          marginBottom: "10px",
+          color: "#D4AF37",
+          fontWeight: "bold",
+        }}
+      >
+        {daysNames.map((d, i) => (
+          <div key={i}>{d}</div>
+        ))}
+      </div>
+
+      {/* גריד ימים */}
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(7, 1fr)",
+          gap: "5px",
+          textAlign: "center",
+        }}
+      >
+        {daysArray.map((day, i) => {
+          const dateKey = day ? formatDateKey(year, month, day) : null;
+          const dayEvents = dateKey && events[dateKey] ? events[dateKey] : [];
+
+          const isToday =
+            day &&
+            year === realToday.getFullYear() &&
+            month === realToday.getMonth() &&
+            day === realToday.getDate();
+
+          return (
             <div
-                style={{
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "center",
-                    gap: "15px",
-                    marginBottom: "15px",
-                    flexWrap: "wrap",
-                }}
+              key={i}
+              onClick={() => openModal(day)}
+              style={{
+                padding: "6px 4px",
+                borderRadius: "5px",
+                backgroundColor: day
+                  ? isToday
+                    ? "#D4AF37"
+                    : "#000"
+                  : "transparent",
+                border: day ? "1px solid #D4AF37" : "none",
+                color: isToday ? "#000" : "#fff",
+                fontWeight: isToday ? "bold" : "normal",
+                cursor: day ? "pointer" : "default",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "stretch",
+                minHeight: "70px",
+              }}
             >
-                <button
-                    onClick={prevMonth}
-                    style={{
-                        background: "none",
-                        border: "1px solid #D4AF37",
-                        color: "#D4AF37",
-                        padding: "5px 10px",
-                        borderRadius: "5px",
-                        cursor: "pointer",
-                    }}
-                >
-                    ➡️
-                </button>
+              <div style={{ marginBottom: "4px", fontSize: "0.9rem" }}>{day}</div>
 
-                <h2 style={{ color: "#D4AF37", margin: 0 }}>
-                    {monthsNames[month]} {year}
-                </h2>
-
-                <button
-                    onClick={nextMonth}
-                    style={{
-                        background: "none",
-                        border: "1px solid #D4AF37",
-                        color: "#D4AF37",
-                        padding: "5px 10px",
-                        borderRadius: "5px",
-                        cursor: "pointer",
-                    }}
-                >
-                    ⬅️
-                </button>
-
-                <button
-                    onClick={goToToday}
-                    style={{
-                        backgroundColor: "#D4AF37",
-                        color: "#000",
-                        border: "none",
-                        padding: "6px 12px",
-                        borderRadius: "5px",
-                        cursor: "pointer",
-                        fontWeight: "bold",
-                    }}
-                >
-                    היום
-                </button>
-            </div>
-
-            <div
+              {/* אירועים כתיבות קטנות */}
+              <div
                 style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(7, 1fr)",
-                    textAlign: "center",
-                    marginBottom: "10px",
-                    color: "#D4AF37",
-                    fontWeight: "bold",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "3px",
+                  overflow: "hidden",
                 }}
-            >
-                {daysNames.map((d, i) => (
-                    <div key={i}>{d}</div>
+              >
+                {dayEvents.slice(0, 3).map((ev) => (
+                  <div
+                    key={ev.id}
+                    style={{
+                      backgroundColor: isToday ? "#000" : "#D4AF37",
+                      color: isToday ? "#D4AF37" : "#000",
+                      borderRadius: "6px",
+                      padding: "2px 4px",
+                      fontSize: "0.7rem",
+                      textAlign: "right",
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis",
+                    }}
+                  >
+                    {ev.startTime && (
+                      <span style={{ opacity: 0.8 }}>{ev.startTime} </span>
+                    )}
+                    <span>{ev.title}</span>
+                  </div>
                 ))}
-            </div>
 
-            <div
-                style={{
-                    display: "grid",
-                    gridTemplateColumns: "repeat(7, 1fr)",
-                    gap: "5px",
-                    textAlign: "center",
-                }}
-            >
-                {daysArray.map((day, i) => {
-                    const dateStr = day ? `${year}-${month + 1}-${day}` : null;
-
-                    const isToday =
-                        day &&
-                        year === realToday.getFullYear() &&
-                        month === realToday.getMonth() &&
-                        day === realToday.getDate();
-
-                    const hasEvents = dateStr && events[dateStr];
-
-                    return (
-                        <div
-                            key={i}
-                            onClick={() => openModal(day)}
-                            style={{
-                                padding: "10px 0",
-                                borderRadius: "5px",
-                                backgroundColor: day
-                                    ? isToday
-                                        ? "#D4AF37"
-                                        : "#000"
-                                    : "transparent",
-                                border: day ? "1px solid #D4AF37" : "none",
-                                color: isToday ? "#000" : "#fff",
-                                fontWeight: isToday ? "bold" : "normal",
-                                cursor: day ? "pointer" : "default",
-                                position: "relative",
-                            }}
-                        >
-                            {day}
-
-                            {hasEvents && (
-                                <div
-                                    style={{
-                                        width: "6px",
-                                        height: "6px",
-                                        backgroundColor: "#D4AF37",
-                                        borderRadius: "50%",
-                                        position: "absolute",
-                                        bottom: "4px",
-                                        left: "50%",
-                                        transform: "translateX(-50%)",
-                                    }}
-                                ></div>
-                            )}
-                        </div>
-                    );
-                })}
-            </div>
-
-            {isModalOpen && (
-                <div
+                {dayEvents.length > 3 && (
+                  <div
                     style={{
-                        position: "fixed",
-                        top: 0,
-                        right: 0,
-                        bottom: 0,
-                        left: 0,
-                        backgroundColor: "rgba(0,0,0,0.6)",
-                        display: "flex",
-                        justifyContent: "center",
-                        alignItems: "center",
-                        zIndex: 999,
+                      fontSize: "0.65rem",
+                      color: isToday ? "#000" : "#D4AF37",
+                      textAlign: "right",
+                      marginTop: "2px",
                     }}
-                >
+                  >
+                    + {dayEvents.length - 3} נוספים
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* מודל אירועים ליום נבחר */}
+      {isModalOpen && selectedDateKey && (
+        <div
+          style={{
+            position: "fixed",
+            top: 0,
+            right: 0,
+            bottom: 0,
+            left: 0,
+            backgroundColor: "rgba(0,0,0,0.6)",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "center",
+            zIndex: 999,
+          }}
+        >
+          <div
+            style={{
+              background: "#222",
+              padding: "20px",
+              borderRadius: "10px",
+              border: "1px solid #D4AF37",
+              width: "360px",
+              maxHeight: "80vh",
+              overflowY: "auto",
+              textAlign: "right",
+              direction: "rtl",
+            }}
+          >
+            <h3 style={{ color: "#D4AF37", marginTop: 0 }}>
+              אירועים עבור {selectedDateLabel}
+            </h3>
+
+            {/* רשימת אירועים קיימים */}
+            {events[selectedDateKey] && events[selectedDateKey].length > 0 && (
+              <div style={{ marginBottom: "15px" }}>
+                {events[selectedDateKey].map((ev) => (
+                  <div
+                    key={ev.id}
+                    style={{
+                      backgroundColor: "#111",
+                      borderRadius: "8px",
+                      padding: "8px",
+                      marginBottom: "8px",
+                      border: "1px solid #444",
+                    }}
+                  >
                     <div
-                        style={{
-                            background: "#222",
-                            padding: "20px",
-                            borderRadius: "10px",
-                            border: "1px solid #D4AF37",
-                            width: "300px",
-                            textAlign: "center",
-                        }}
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: "4px",
+                      }}
                     >
-                        <h3 style={{ color: "#D4AF37" }}>הוסף אירוע</h3>
-                        <p style={{ color: "#fff" }}>{selectedDate}</p>
-
-                        <input
-                            type="text"
-                            value={eventText}
-                            onChange={(e) => setEventText(e.target.value)}
-                            placeholder="תיאור האירוע..."
-                            style={{
-                                width: "90%",
-                                padding: "8px",
-                                marginBottom: "10px",
-                                borderRadius: "5px",
-                                border: "1px solid #D4AF37",
-                                background: "#000",
-                                color: "#fff",
-                            }}
-                        />
-
-                        <div style={{ display: "flex", gap: "10px", justifyContent: "center" }}>
-                            <button
-                                onClick={saveEvent}
-                                style={{
-                                    backgroundColor: "#D4AF37",
-                                    color: "#000",
-                                    padding: "8px 12px",
-                                    borderRadius: "5px",
-                                    border: "none",
-                                    cursor: "pointer",
-                                    fontWeight: "bold",
-                                }}
-                            >
-                                שמירה
-                            </button>
-
-                            <button
-                                onClick={() => setIsModalOpen(false)}
-                                style={{
-                                    backgroundColor: "#555",
-                                    color: "#fff",
-                                    padding: "8px 12px",
-                                    borderRadius: "5px",
-                                    border: "none",
-                                    cursor: "pointer",
-                                }}
-                            >
-                                ביטול
-                            </button>
-                        </div>
+                      <strong style={{ color: "#D4AF37", fontSize: "0.9rem" }}>
+                        {ev.title}
+                      </strong>
+                      <button
+                        onClick={() => deleteEvent(ev.id)}
+                        style={{
+                          background: "transparent",
+                          border: "none",
+                          color: "#ff6b6b",
+                          cursor: "pointer",
+                          fontSize: "0.8rem",
+                        }}
+                      >
+                        מחיקה
+                      </button>
                     </div>
-                </div>
+
+                    {(ev.startTime || ev.endTime) && (
+                      <div style={{ fontSize: "0.8rem", marginBottom: "2px" }}>
+                        🕒 {ev.startTime || "—"} - {ev.endTime || "—"}
+                      </div>
+                    )}
+
+                    {ev.attendees && (
+                      <div style={{ fontSize: "0.8rem", marginBottom: "2px" }}>
+                        👥 {ev.attendees}
+                      </div>
+                    )}
+
+                    {ev.notes && (
+                      <div style={{ fontSize: "0.8rem", opacity: 0.9 }}>
+                        📝 {ev.notes}
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
             )}
+
+            {/* טופס הוספת אירוע חדש */}
+            <div
+              style={{
+                borderTop: "1px solid #444",
+                paddingTop: "10px",
+                marginTop: "5px",
+              }}
+            >
+              <h4 style={{ color: "#D4AF37", marginBottom: "8px" }}>
+                הוספת אירוע חדש
+              </h4>
+
+              <div style={{ marginBottom: "8px" }}>
+                <label
+                  style={{ display: "block", fontSize: "0.8rem", marginBottom: "3px" }}
+                >
+                  שם אירוע
+                </label>
+                <input
+                  type="text"
+                  value={title}
+                  onChange={(e) => setTitle(e.target.value)}
+                  placeholder="כותרת..."
+                  style={{
+                    width: "100%",
+                    padding: "6px",
+                    borderRadius: "5px",
+                    border: "1px solid #D4AF37",
+                    background: "#000",
+                    color: "#fff",
+                    fontSize: "0.85rem",
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: "8px",
+                  marginBottom: "8px",
+                }}
+              >
+                <div style={{ flex: 1 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "0.8rem",
+                      marginBottom: "3px",
+                    }}
+                  >
+                    שעה התחלה
+                  </label>
+                  <input
+                    type="time"
+                    value={startTime}
+                    onChange={(e) => setStartTime(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "6px",
+                      borderRadius: "5px",
+                      border: "1px solid #D4AF37",
+                      background: "#000",
+                      color: "#fff",
+                      fontSize: "0.85rem",
+                    }}
+                  />
+                </div>
+
+                <div style={{ flex: 1 }}>
+                  <label
+                    style={{
+                      display: "block",
+                      fontSize: "0.8rem",
+                      marginBottom: "3px",
+                    }}
+                  >
+                    שעה סיום
+                  </label>
+                  <input
+                    type="time"
+                    value={endTime}
+                    onChange={(e) => setEndTime(e.target.value)}
+                    style={{
+                      width: "100%",
+                      padding: "6px",
+                      borderRadius: "5px",
+                      border: "1px solid #D4AF37",
+                      background: "#000",
+                      color: "#fff",
+                      fontSize: "0.85rem",
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div style={{ marginBottom: "8px" }}>
+                <label
+                  style={{ display: "block", fontSize: "0.8rem", marginBottom: "3px" }}
+                >
+                  מוזמנים
+                </label>
+                <input
+                  type="text"
+                  value={attendees}
+                  onChange={(e) => setAttendees(e.target.value)}
+                  placeholder="שמות/מיילים, מופרדים בפסיקים..."
+                  style={{
+                    width: "100%",
+                    padding: "6px",
+                    borderRadius: "5px",
+                    border: "1px solid #D4AF37",
+                    background: "#000",
+                    color: "#fff",
+                    fontSize: "0.85rem",
+                  }}
+                />
+              </div>
+
+              <div style={{ marginBottom: "10px" }}>
+                <label
+                  style={{ display: "block", fontSize: "0.8rem", marginBottom: "3px" }}
+                >
+                  הערות
+                </label>
+                <textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                  placeholder="הערות נוספות..."
+                  style={{
+                    width: "100%",
+                    padding: "6px",
+                    borderRadius: "5px",
+                    border: "1px solid #D4AF37",
+                    background: "#000",
+                    color: "#fff",
+                    fontSize: "0.85rem",
+                    resize: "vertical",
+                  }}
+                />
+              </div>
+
+              <div
+                style={{
+                  display: "flex",
+                  gap: "10px",
+                  justifyContent: "flex-start",
+                  marginTop: "5px",
+                }}
+              >
+                <button
+                  onClick={saveEvent}
+                  style={{
+                    backgroundColor: "#D4AF37",
+                    color: "#000",
+                    padding: "8px 12px",
+                    borderRadius: "5px",
+                    border: "none",
+                    cursor: "pointer",
+                    fontWeight: "bold",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  שמירת אירוע
+                </button>
+
+                <button
+                  onClick={closeModal}
+                  style={{
+                    backgroundColor: "#555",
+                    color: "#fff",
+                    padding: "8px 12px",
+                    borderRadius: "5px",
+                    border: "none",
+                    cursor: "pointer",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  סגירה
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
-    );
+      )}
+    </div>
+  );
 };
 
 export default CalendarGrid;
