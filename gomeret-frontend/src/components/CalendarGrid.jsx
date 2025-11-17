@@ -16,6 +16,7 @@ const CalendarGrid = () => {
     const [selectedDateLabel, setSelectedDateLabel] = useState("");
     const [editingEventId, setEditingEventId] = useState(null);
     const [draggingEvent, setDraggingEvent] = useState(null);
+    const [category, setCategory] = useState("");
 
     const [title, setTitle] = useState("");
     const [startTime, setStartTime] = useState("");
@@ -39,6 +40,12 @@ const CalendarGrid = () => {
     ];
 
     const daysNames = ["א", "ב", "ג", "ד", "ה", "ו", "ש"];
+
+    const categoryColors = {
+        study: { bg: "#1E2A44", text: "#E6ECF7" },
+        personal: { bg: "#4A1F2F", text: "#F8DDE2" },
+        work: { bg: "#54430D", text: "#FFF7D1" },
+    };
 
     const formatDateKey = (y, m, d) =>
         `${y}-${String(m + 1).padStart(2, "0")}-${String(d).padStart(2, "0")}`;
@@ -100,6 +107,7 @@ const CalendarGrid = () => {
         setNotes("");
         setAttendees("");
         setIsModalOpen(true);
+        setCategory("");
     };
 
     const closeModal = () => {
@@ -120,7 +128,6 @@ const CalendarGrid = () => {
         if (!title.trim() && !notes.trim()) return;
 
         if (editingEventId) {
-            // עדכון אירוע קיים
             setEvents(prev => {
                 const updated = prev[selectedDateKey].map(ev =>
                     ev.id === editingEventId
@@ -131,6 +138,7 @@ const CalendarGrid = () => {
                             endTime,
                             notes,
                             attendees,
+                            category,
                         }
                         : ev
                 );
@@ -139,7 +147,6 @@ const CalendarGrid = () => {
 
             setEditingEventId(null);
         } else {
-            // יצירת אירוע חדש
             const newEvent = {
                 id: Date.now(),
                 title: title.trim() || "אירוע ללא שם",
@@ -147,6 +154,7 @@ const CalendarGrid = () => {
                 endTime: endTime || null,
                 notes: notes.trim() || "",
                 attendees: attendees.trim() || "",
+                category: category || "",
             };
 
             setEvents(prev => ({
@@ -202,6 +210,37 @@ const CalendarGrid = () => {
 
         setDraggingEvent(null);
     };
+    
+    const monthEvents = Object.entries(events)
+        .filter(([dateKey]) => {
+            const [y, m] = dateKey.split("-").map(Number);
+            return y === year && m === month + 1;
+        })
+        .flatMap(([dateKey, evs]) =>
+            evs.map(ev => ({
+                ...ev,
+                dateKey,
+                dateLabel: dateKey.split("-").reverse().join("."),
+            }))
+        )
+        .sort((a, b) => {
+            const timeA = a.startTime || "00:00";
+            const timeB = b.startTime || "00:00";
+            return a.dateKey.localeCompare(b.dateKey) || timeA.localeCompare(timeB);
+        });
+
+    const modalAnimationStyle = {
+        opacity: 0,
+        transform: "scale(0.95)",
+        animation: "fadeInModal 0.25s ease-out forwards",
+    };
+
+    const modalKeyframes = `
+        @keyframes fadeInModal {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+        `;
 
     return (
         <div
@@ -215,6 +254,8 @@ const CalendarGrid = () => {
                 marginTop: "20px",
             }}
         >
+            <style>{modalKeyframes}</style>
+
             <div
                 style={{
                     display: "flex",
@@ -368,12 +409,21 @@ const CalendarGrid = () => {
                                         onDragStart={() => setDraggingEvent({ ...ev, from: dateKey })}
                                         onDragEnd={() => setDraggingEvent(null)}
                                         style={{
-                                            backgroundColor: isToday ? "#000" : "#D4AF37",
-                                            color: isToday ? "#D4AF37" : "#000",
+                                            backgroundColor: ev.category
+                                                ? categoryColors[ev.category]?.bg
+                                                : isToday
+                                                    ? "#000"
+                                                    : "#D4AF37",
+
+                                            color: ev.category
+                                                ? categoryColors[ev.category]?.text
+                                                : isToday
+                                                    ? "#D4AF37"
+                                                    : "#000",
+
                                             borderRadius: "6px",
                                             padding: "2px 4px",
                                             fontSize: "0.7rem",
-                                            textAlign: "right",
                                             whiteSpace: "nowrap",
                                             overflow: "hidden",
                                             textOverflow: "ellipsis",
@@ -402,8 +452,12 @@ const CalendarGrid = () => {
                                                     position: "absolute",
                                                     top: "-10px",
                                                     right: "100%",
-                                                    background: "#fff",
-                                                    color: "#000",
+                                                    background: hoveredEventData.category
+                                                        ? categoryColors[hoveredEventData.category].bg
+                                                        : "#fff",
+                                                    color: hoveredEventData.category
+                                                        ? categoryColors[hoveredEventData.category].text
+                                                        : "#000",
                                                     border: "2px solid #D4AF37",
                                                     borderRadius: "10px",
                                                     padding: "10px",
@@ -490,7 +544,8 @@ const CalendarGrid = () => {
                             overflowY: "auto",
                             textAlign: "right",
                             direction: "rtl",
-                        }}
+                            ...modalAnimationStyle, 
+                        }}                        
                     >
                         <h3 style={{ color: "#D4AF37", marginTop: 0 }}>
                             אירועים עבור {selectedDateLabel}
@@ -692,6 +747,33 @@ const CalendarGrid = () => {
                                 <label
                                     style={{ display: "block", fontSize: "0.8rem", marginBottom: "3px" }}
                                 >
+                                    קטגוריה
+                                </label>
+
+                                <select
+                                    value={category}
+                                    onChange={(e) => setCategory(e.target.value)}
+                                    style={{
+                                        width: "100%",
+                                        padding: "6px",
+                                        borderRadius: "5px",
+                                        border: "1px solid #D4AF37",
+                                        background: "#000",
+                                        color: "#fff",
+                                        fontSize: "0.85rem",
+                                    }}
+                                >
+                                    <option value="">ללא</option>
+                                    <option value="study">📘 לימודים</option>
+                                    <option value="personal">❤️ אישי</option>
+                                    <option value="work">💼 עבודה</option>
+                                </select>
+                            </div>
+
+                            <div style={{ marginBottom: "10px" }}>
+                                <label
+                                    style={{ display: "block", fontSize: "0.8rem", marginBottom: "3px" }}
+                                >
                                     הערות
                                 </label>
                                 <textarea
@@ -755,6 +837,71 @@ const CalendarGrid = () => {
                     </div>
                 </div>
             )}
+            <div
+                style={{
+                    marginTop: "30px",
+                    padding: "15px",
+                    background: "#000",
+                    border: "1px solid #D4AF37",
+                    borderRadius: "10px",
+                }}
+            >
+                <h3 style={{ color: "#D4AF37", margin: "0 0 10px 0" }}>
+                    רשימת אירועי החודש
+                </h3>
+
+                {monthEvents.length === 0 ? (
+                    <div style={{ color: "#999", padding: "10px 0" }}>
+                        אין אירועים החודש
+                    </div>
+                ) : (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                        {monthEvents.map((ev) => (
+                            <div
+                                key={ev.id}
+                                onClick={() => {
+                                    const [y, m, d] = ev.dateKey.split("-").map(Number);
+                                    openModal(d);
+                                }}
+                                style={{
+                                    backgroundColor: ev.category
+                                        ? categoryColors[ev.category].bg
+                                        : "#111",
+                                    color: ev.category
+                                        ? categoryColors[ev.category].text
+                                        : "#fff",
+                                    padding: "10px",
+                                    borderRadius: "8px",
+                                    cursor: "pointer",
+                                    border: "1px solid #333",
+                                    display: "flex",
+                                    flexDirection: "column",
+                                    gap: "4px",
+                                }}
+                            >
+                                <div style={{ fontWeight: "bold", fontSize: "0.95rem" }}>
+                                    {ev.title}
+                                </div>
+
+                                <div style={{ fontSize: "0.8rem", opacity: 0.8 }}>
+                                    📅 {ev.dateLabel}
+                                </div>
+
+                                <div style={{ fontSize: "0.8rem" }}>
+                                    🕒 {ev.startTime || "—"} - {ev.endTime || "—"}
+                                </div>
+
+                                {ev.notes && (
+                                    <div style={{ fontSize: "0.8rem" }}>
+                                        📝 {ev.notes}
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+                    </div>
+                )}
+            </div>
+
         </div>
     );
 };
