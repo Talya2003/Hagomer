@@ -15,6 +15,7 @@ const CalendarGrid = () => {
     const [selectedDateKey, setSelectedDateKey] = useState(null);
     const [selectedDateLabel, setSelectedDateLabel] = useState("");
     const [editingEventId, setEditingEventId] = useState(null);
+    const [draggingEvent, setDraggingEvent] = useState(null);
 
     const [title, setTitle] = useState("");
     const [startTime, setStartTime] = useState("");
@@ -176,6 +177,32 @@ const CalendarGrid = () => {
         });
     };
 
+    const handleDropEvent = (targetDateKey) => {
+        if (!draggingEvent) return;
+        if (draggingEvent.from === targetDateKey) return;
+
+        setEvents(prev => {
+            const updated = { ...prev };
+
+            updated[draggingEvent.from] =
+                updated[draggingEvent.from].filter(ev => ev.id !== draggingEvent.id);
+
+            if (updated[draggingEvent.from].length === 0) {
+                delete updated[draggingEvent.from];
+            }
+
+            if (!updated[targetDateKey]) updated[targetDateKey] = [];
+            updated[targetDateKey].push({
+                ...draggingEvent,
+                from: undefined,
+            });
+
+            return updated;
+        });
+
+        setDraggingEvent(null);
+    };
+
     return (
         <div
             style={{
@@ -188,7 +215,6 @@ const CalendarGrid = () => {
                 marginTop: "20px",
             }}
         >
-            {/* כותרת + חצים + היום */}
             <div
                 style={{
                     display: "flex",
@@ -247,7 +273,6 @@ const CalendarGrid = () => {
                 </button>
             </div>
 
-            {/* כותרת ימי השבוע */}
             <div
                 style={{
                     display: "grid",
@@ -263,7 +288,6 @@ const CalendarGrid = () => {
                 ))}
             </div>
 
-            {/* גריד ימים */}
             <div
                 style={{
                     display: "grid",
@@ -286,6 +310,8 @@ const CalendarGrid = () => {
                         <div
                             key={i}
                             onClick={() => openModal(day)}
+                            onDragOver={(e) => e.preventDefault()}
+                            onDrop={() => handleDropEvent(dateKey)}
                             style={{
                                 position: "relative",
                                 padding: "6px 4px",
@@ -338,6 +364,9 @@ const CalendarGrid = () => {
                                 {dayEvents.slice(0, 3).map((ev) => (
                                     <div
                                         key={ev.id}
+                                        draggable
+                                        onDragStart={() => setDraggingEvent({ ...ev, from: dateKey })}
+                                        onDragEnd={() => setDraggingEvent(null)}
                                         style={{
                                             backgroundColor: isToday ? "#000" : "#D4AF37",
                                             color: isToday ? "#D4AF37" : "#000",
