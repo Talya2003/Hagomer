@@ -1,36 +1,52 @@
-import React from "react";
+import React, { useState } from "react";
 
 const CalendarGrid = () => {
   const today = new Date();
-  const year = today.getFullYear();
-  const month = today.getMonth();
 
-  // מספר הימים בחודש
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const [year, setYear] = useState(today.getFullYear());
+  const [month, setMonth] = useState(today.getMonth());
 
-  // היום שבו מתחיל החודש (0 = ראשון)
-  const firstDay = new Date(year, month, 1).getDay();
-
-  // שמות ימים בעברית
-  const daysNames = ["א", "ב", "ג", "ד", "ה", "ו", "ש"];
-
-  // שמות חודשים בעברית
   const monthsNames = [
-    "ינואר", "פברואר", "מרץ", "אפריל", "מאי", "יוני",
-    "יולי", "אוגוסט", "ספטמבר", "אוקטובר", "נובמבר", "דצמבר"
+    "ינואר",
+    "פברואר",
+    "מרץ",
+    "אפריל",
+    "מאי",
+    "יוני",
+    "יולי",
+    "אוגוסט",
+    "ספטמבר",
+    "אוקטובר",
+    "נובמבר",
+    "דצמבר",
   ];
 
-  const daysArray = [];
+  const daysNames = ["א", "ב", "ג", "ד", "ה", "ו", "ש"];
 
-  // רווחים לפני תחילת החודש (ליישור נכון)
-  for (let i = 0; i < firstDay; i++) {
-    daysArray.push(null);
-  }
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const firstDay = new Date(year, month, 1).getDay();
 
-  // הוספת כל ימי החודש
-  for (let i = 1; i <= daysInMonth; i++) {
-    daysArray.push(i);
-  }
+  let daysArray = [];
+  for (let i = 0; i < firstDay; i++) daysArray.push(null);
+  for (let i = 1; i <= daysInMonth; i++) daysArray.push(i);
+
+  const nextMonth = () => {
+    if (month === 11) {
+      setMonth(0);
+      setYear(year + 1);
+    } else {
+      setMonth(month + 1);
+    }
+  };
+
+  const prevMonth = () => {
+    if (month === 0) {
+      setMonth(11);
+      setYear(year - 1);
+    } else {
+      setMonth(month - 1);
+    }
+  };
 
   return (
     <div
@@ -44,11 +60,48 @@ const CalendarGrid = () => {
         marginTop: "20px",
       }}
     >
-      <h2 style={{ color: "#D4AF37", margin: "10px 0" }}>
-        📅 {monthsNames[month]} {year}
-      </h2>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "center",
+          alignItems: "center",
+          gap: "20px",
+          marginBottom: "10px",
+        }}
+      >
+        <button
+          onClick={prevMonth}
+          style={{
+            background: "none",
+            border: "1px solid #D4AF37",
+            color: "#D4AF37",
+            padding: "5px 10px",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+        >
+          ➡️
+        </button>
 
-      {/* שמות ימי השבוע */}
+        <h2 style={{ color: "#D4AF37", margin: 0 }}>
+          {monthsNames[month]} {year}
+        </h2>
+
+        <button
+          onClick={nextMonth}
+          style={{
+            background: "none",
+            border: "1px solid #D4AF37",
+            color: "#D4AF37",
+            padding: "5px 10px",
+            borderRadius: "5px",
+            cursor: "pointer",
+          }}
+        >
+          ⬅️
+        </button>
+      </div>
+
       <div
         style={{
           display: "grid",
@@ -56,16 +109,14 @@ const CalendarGrid = () => {
           textAlign: "center",
           marginBottom: "10px",
           color: "#D4AF37",
+          fontWeight: "bold",
         }}
       >
-        {daysNames.map((d, index) => (
-          <div key={index} style={{ padding: "5px 0", fontWeight: "bold" }}>
-            {d}
-          </div>
+        {daysNames.map((d, i) => (
+          <div key={i}>{d}</div>
         ))}
       </div>
 
-      {/* גריד של הימים */}
       <div
         style={{
           display: "grid",
@@ -74,9 +125,9 @@ const CalendarGrid = () => {
           textAlign: "center",
         }}
       >
-        {daysArray.map((day, index) => (
+        {daysArray.map((day, i) => (
           <div
-            key={index}
+            key={i}
             style={{
               padding: "10px 0",
               borderRadius: "5px",
