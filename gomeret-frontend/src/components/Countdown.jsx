@@ -26,7 +26,7 @@ const Countdown = () => {
   }, []);
 
   return (
-    <div style={{ textAlign: "center", padding: "20px", color: "#D4AF37" }}>
+    <div style={{ textAlign: "center", padding: "20px", color: "#D4AF37", direction: "rtl" }}>
       <h1 style={{ fontSize: "2rem", marginBottom: "20px" }}>
         🎓 ספירה לאחור לגמר!
       </h1>
