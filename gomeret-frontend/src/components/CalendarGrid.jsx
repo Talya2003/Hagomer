@@ -14,6 +14,7 @@ const CalendarGrid = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDateKey, setSelectedDateKey] = useState(null);
     const [selectedDateLabel, setSelectedDateLabel] = useState("");
+    const [editingEventId, setEditingEventId] = useState(null);
 
     const [title, setTitle] = useState("");
     const [startTime, setStartTime] = useState("");
@@ -104,26 +105,54 @@ const CalendarGrid = () => {
         setIsModalOpen(false);
     };
 
+    const startEditEvent = (event) => {
+        setEditingEventId(event.id);
+        setTitle(event.title);
+        setStartTime(event.startTime);
+        setEndTime(event.endTime);
+        setNotes(event.notes);
+        setAttendees(event.attendees);
+    };
+
     const saveEvent = () => {
         if (!selectedDateKey) return;
         if (!title.trim() && !notes.trim()) return;
 
-        const newEvent = {
-            id: Date.now(),
-            title: title.trim() || "אירוע ללא שם",
-            startTime: startTime || null,
-            endTime: endTime || null,
-            notes: notes.trim() || "",
-            attendees: attendees.trim() || "",
-        };
+        if (editingEventId) {
+            // עדכון אירוע קיים
+            setEvents(prev => {
+                const updated = prev[selectedDateKey].map(ev =>
+                    ev.id === editingEventId
+                        ? {
+                            ...ev,
+                            title,
+                            startTime,
+                            endTime,
+                            notes,
+                            attendees,
+                        }
+                        : ev
+                );
+                return { ...prev, [selectedDateKey]: updated };
+            });
 
-        setEvents((prev) => {
-            const old = prev[selectedDateKey] || [];
-            return {
-                ...prev,
-                [selectedDateKey]: [...old, newEvent],
+            setEditingEventId(null);
+        } else {
+            // יצירת אירוע חדש
+            const newEvent = {
+                id: Date.now(),
+                title: title.trim() || "אירוע ללא שם",
+                startTime: startTime || null,
+                endTime: endTime || null,
+                notes: notes.trim() || "",
+                attendees: attendees.trim() || "",
             };
-        });
+
+            setEvents(prev => ({
+                ...prev,
+                [selectedDateKey]: [...(prev[selectedDateKey] || []), newEvent],
+            }));
+        }
 
         setTitle("");
         setStartTime("");
@@ -406,7 +435,6 @@ const CalendarGrid = () => {
                 })}
             </div>
 
-            {/* מודל אירועים ליום נבחר */}
             {isModalOpen && selectedDateKey && (
                 <div
                     style={{
@@ -439,7 +467,6 @@ const CalendarGrid = () => {
                             אירועים עבור {selectedDateLabel}
                         </h3>
 
-                        {/* רשימת אירועים קיימים */}
                         {events[selectedDateKey] && events[selectedDateKey].length > 0 && (
                             <div style={{ marginBottom: "15px" }}>
                                 {events[selectedDateKey].map((ev) => (
@@ -475,6 +502,20 @@ const CalendarGrid = () => {
                                                 }}
                                             >
                                                 מחיקה
+                                            </button>
+
+                                            <button
+                                                onClick={() => startEditEvent(ev)}
+                                                style={{
+                                                    background: "transparent",
+                                                    border: "none",
+                                                    color: "#D4AF37",
+                                                    cursor: "pointer",
+                                                    fontSize: "0.8rem",
+                                                    marginLeft: "10px"
+                                                }}
+                                            >
+                                                עריכה
                                             </button>
                                         </div>
 
@@ -663,7 +704,7 @@ const CalendarGrid = () => {
                                         fontSize: "0.9rem",
                                     }}
                                 >
-                                    שמירת אירוע
+                                    {editingEventId ? "עדכון אירוע" : "שמירת אירוע"}
                                 </button>
 
                                 <button
