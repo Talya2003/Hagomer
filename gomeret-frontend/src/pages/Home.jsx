@@ -12,7 +12,6 @@ const Home = () => {
                 direction: "rtl",
             }}
         >
-            {/* ספירה לאחור למעלה */}
             <div
                 style={{
                     display: "flex",
@@ -23,28 +22,30 @@ const Home = () => {
                 <Countdown />
             </div>
 
-            {/* אזור תוכן - שתי עמודות */}
             <div
                 style={{
                     display: "flex",
-                    gap: "20px",
+                    flexDirection: "row-reverse",
+                    gap: "30px",
                     justifyContent: "center",
                     alignItems: "flex-start",
-                    flexWrap: "wrap",
+                    width: "100%",
                 }}
             >
-                {/* טור שמאל - בדיחות + השראה */}
-                <div style={{ flex: "1", minWidth: "280px" }}>
+                <div
+                    style={{
+                        width: "25%",
+                        minWidth: "250px",
+                    }}
+                >
                     <JokesBox />
                     <NotesBox />
                 </div>
 
-                {/* טור ימין - לוח שנה */}
                 <div
                     style={{
-                        flex: "2",
-                        minWidth: "350px",
-                        marginTop: "20px", // ⭐️ מיישר לגובה
+                        width: "70%",
+                        minWidth: "400px",
                     }}
                 >
                     <CalendarGrid />
