@@ -6,7 +6,10 @@ const CalendarGrid = () => {
     const [year, setYear] = useState(realToday.getFullYear());
     const [month, setMonth] = useState(realToday.getMonth());
 
+
     const [events, setEvents] = useState({});
+    const [hoveredEvent, setHoveredEvent] = useState(null);
+    const [hoveredEventData, setHoveredEventData] = useState(null);
 
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [selectedDateKey, setSelectedDateKey] = useState(null);
@@ -108,8 +111,8 @@ const CalendarGrid = () => {
         const newEvent = {
             id: Date.now(),
             title: title.trim() || "אירוע ללא שם",
-            startTime: startTime || "",
-            endTime: endTime || "",
+            startTime: startTime || null,
+            endTime: endTime || null,
             notes: notes.trim() || "",
             attendees: attendees.trim() || "",
         };
@@ -317,11 +320,71 @@ const CalendarGrid = () => {
                                             overflow: "hidden",
                                             textOverflow: "ellipsis",
                                         }}
+                                        onMouseEnter={() => {
+                                            setHoveredEvent(ev.id);
+                                            setHoveredEventData({
+                                                ...ev,
+                                                dateKey: dateKey,
+                                                dateLabel: `${day}.${month + 1}.${year}`
+                                            });
+                                        }}
+                                        onMouseLeave={() => {
+                                            setHoveredEvent(null);
+                                            setHoveredEventData(null);
+                                        }}
                                     >
                                         {ev.startTime && (
                                             <span style={{ opacity: 0.8 }}>{ev.startTime} </span>
                                         )}
                                         <span>{ev.title}</span>
+
+                                        {hoveredEvent === ev.id && hoveredEventData && (
+                                            <div
+                                                style={{
+                                                    position: "absolute",
+                                                    top: "-10px",
+                                                    right: "100%",
+                                                    background: "#fff",
+                                                    color: "#000",
+                                                    border: "2px solid #D4AF37",
+                                                    borderRadius: "10px",
+                                                    padding: "10px",
+                                                    fontSize: "0.78rem",
+                                                    whiteSpace: "normal",
+                                                    width: "220px",
+                                                    boxShadow: "0 4px 12px rgba(0,0,0,0.25)",
+                                                    zIndex: 9999,
+                                                }}
+                                            >
+                                                <strong style={{ color: "#D4AF37", fontSize: "0.9rem", display: "block", marginBottom: "6px" }}>
+                                                    {hoveredEventData.title}
+                                                </strong>
+
+                                                <div style={{ marginBottom: "6px", fontSize: "0.75rem", opacity: 0.8 }}>
+                                                    📅 {hoveredEventData.dateLabel}
+                                                </div>
+
+                                                <div style={{ marginBottom: "6px" }}>
+                                                    🕒 <strong>{hoveredEventData.startTime || "—"}</strong>
+                                                    {" עד "}
+                                                    <strong>{hoveredEventData.endTime || "—"}</strong>
+                                                </div>
+
+                                                <div style={{ marginBottom: "6px" }}>
+                                                    👥{" "}
+                                                    {hoveredEventData.attendees && hoveredEventData.attendees.trim() !== ""
+                                                        ? hoveredEventData.attendees
+                                                        : "—"}
+                                                </div>
+
+                                                <div>
+                                                    📝{" "}
+                                                    {hoveredEventData.notes && hoveredEventData.notes.trim() !== ""
+                                                        ? hoveredEventData.notes
+                                                        : "אין הערות"}
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
                                 ))}
 
