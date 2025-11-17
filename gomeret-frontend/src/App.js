@@ -4,7 +4,7 @@ import Countdown from "./components/Countdown";
 import Header from "./components/Header";
 import Home from "./pages/Home";
 import Calendar from "./pages/Calendar";
-import Jokes from "./pages/JokesBox";
+import Jokes from "./components/JokesBox";
 
 function App() {
   return (
