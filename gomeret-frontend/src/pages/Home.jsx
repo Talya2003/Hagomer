@@ -6,23 +6,49 @@ import CalendarGrid from "../components/CalendarGrid";
 
 const Home = () => {
     return (
-        <div style={{
-            display: "flex",
-            gap: "20px",
-            padding: "20px",
-            justifyContent: "center",
-            alignItems: "flex-start",
-            direction: "rtl",
-            flexWrap: "wrap",
-        }}>
-            <Countdown />
-            <div style={{ flex: "3", minWidth: "300px" }}>
-                <CalendarGrid />
+        <div
+            style={{
+                padding: "20px",
+                direction: "rtl",
+            }}
+        >
+            {/* ספירה לאחור למעלה */}
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    marginBottom: "40px",
+                }}
+            >
+                <Countdown />
             </div>
 
-            <div style={{ flex: "1", minWidth: "300px" }}>
-                <JokesBox />
-                <NotesBox />
+            {/* אזור תוכן - שתי עמודות */}
+            <div
+                style={{
+                    display: "flex",
+                    gap: "20px",
+                    justifyContent: "center",
+                    alignItems: "flex-start",
+                    flexWrap: "wrap",
+                }}
+            >
+                {/* טור שמאל - בדיחות + השראה */}
+                <div style={{ flex: "1", minWidth: "280px" }}>
+                    <JokesBox />
+                    <NotesBox />
+                </div>
+
+                {/* טור ימין - לוח שנה */}
+                <div
+                    style={{
+                        flex: "2",
+                        minWidth: "350px",
+                        marginTop: "20px", // ⭐️ מיישר לגובה
+                    }}
+                >
+                    <CalendarGrid />
+                </div>
             </div>
         </div>
     );
